@@ -240,7 +240,7 @@ class RewardCalculator:
         total = (bd.triage_accuracy * self.TRIAGE_W + bd.investigation_quality * self.INVESTIGATION_W +
                  bd.diagnosis_correctness * self.DIAGNOSIS_W +
                  bd.remediation_appropriateness * self.REMEDIATION_W + bd.efficiency * self.EFFICIENCY_W)
-        total = max(-1.0, min(1.0, round(total, 4)))
+        total = max(-0.999, min(0.999, round(total, 4)))
         return Reward(score=total, breakdown=bd,
                       message=f"T:{bd.triage_accuracy:.2f} I:{bd.investigation_quality:.2f} "
                               f"D:{bd.diagnosis_correctness:.2f} R:{bd.remediation_appropriateness:.2f} "

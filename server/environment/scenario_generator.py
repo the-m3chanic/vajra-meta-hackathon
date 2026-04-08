@@ -412,9 +412,12 @@ def generate_scenario(task_id: str, seed: int) -> dict:
         template = rng.choice(MEDIUM_SCENARIOS)
     elif task_id == "hard_subtle_degradation":
         template = rng.choice(HARD_SCENARIOS)
+    elif task_id == "mixed_dynamic_incidents":
+        # Randomly pick from ALL scenarios
+        all_scenarios = EASY_SCENARIOS + MEDIUM_SCENARIOS + HARD_SCENARIOS
+        template = rng.choice(all_scenarios)
     else:
         raise ValueError(f"Unknown task: {task_id}")
-
     infra = InfrastructureSimulator(seed=seed)
     infra.apply_incident_effects(
         root_cause_service=template["root_cause_service"],

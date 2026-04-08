@@ -44,8 +44,17 @@ async def root():
 async def health():
     return {"status": "healthy"}
 
+@app.get("/reset")
+async def reset_get(task_id: str = "easy_single_service_outage", seed: int = None):
+    try:
+        obs = app.state.env.reset(task_id=task_id, seed=seed)
+        return {"observation": obs.model_dump()}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(400, str(e))
+    
 @app.post("/reset")
-async def reset(req: ResetRequest):
+async def reset(req: ResetRequest=ResetRequest()):
     try:
         obs = app.state.env.reset(task_id=req.task_id, seed=req.seed)
         return {"observation": obs.model_dump()}

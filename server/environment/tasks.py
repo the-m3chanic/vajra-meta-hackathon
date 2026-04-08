@@ -35,6 +35,15 @@ TASKS = {
         difficulty="hard", max_steps=25, num_episodes=5,
         seeds=[3001, 3002, 3003, 3004, 3005, 3006, 3007],
     ),
+    "mixed_dynamic_incidents": Task(
+        id="mixed_dynamic_incidents",
+        name="Mixed Dynamic Incidents",
+        description="Random mix of easy, medium, and hard incidents. Tests generalization across different root cause types and severity levels.",
+        difficulty="mixed",
+        max_steps=20,
+        num_episodes=5,
+        seeds=[4001, 4002, 4003, 4004, 4005],
+    ),
 }
 
 def get_task(task_id: str) -> Task:
