@@ -90,18 +90,21 @@ tasks:
     description: "Single service failure with clear error in logs."
     difficulty: easy
     max_steps: 15
-
   - id: "medium_cascading_failure"
     name: "Cascading Service Failure"
-    description: "Failure cascades across 2-4 services. Must trace to origin."
+    description: "Failure cascades across 2-4 services."
     difficulty: medium
     max_steps: 20
-
   - id: "hard_subtle_degradation"
     name: "Subtle Performance Degradation"
-    description: "Misleading symptoms, red herrings, requires correlating timestamps."
+    description: "Misleading symptoms, red herrings."
     difficulty: hard
     max_steps: 25
+  - id: "mixed_dynamic_incidents"
+    name: "Mixed Dynamic Incidents"
+    description: "Random mix of all difficulty levels. Tests generalization."
+    difficulty: mixed
+    max_steps: 20
 
 deployment:
   platform: huggingface_spaces

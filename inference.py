@@ -373,6 +373,7 @@ TASK_SEEDS = {
     "easy_single_service_outage": [1001, 1002, 1003],
     "medium_cascading_failure": [2001, 2002, 2003],
     "hard_subtle_degradation": [3001, 3002, 3003],
+    "mixed_dynamic_incidents": [4001, 4002, 4003],
 }
 
 def main():
