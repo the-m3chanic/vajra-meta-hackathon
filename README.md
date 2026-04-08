@@ -259,12 +259,21 @@ python app.py
 
 ## Run Baseline
 ```
-export API_BASE_URL=https://the-m3chanic-vajra-meta-hackathon.hf.space
+export API_BASE_URL=https://router.huggingface.co/v1
 export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
 export HF_TOKEN=HF_TOKEN_HERE
 export ENV_URL=https://the-m3chanic-vajra-meta-hackathon.hf.space
 
-python baseline/inference.py
+python inference.py
+
+
+
+# To run tests locally
+export API_BASE_URL=http://localhost:11434/v1
+export MODEL_NAME=llama3.2
+export HF_TOKEN=ollama
+export ENV_URL=http://localhost:7860
+python inference.py
 ```
 
 ## Run Tests
