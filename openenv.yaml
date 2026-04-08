@@ -1,0 +1,109 @@
+name: vajra-meta-hackathon
+version: "1.2.0"
+description: >
+  A realistic Site Reliability Engineering (SRE) environment where an AI agent
+  performs incident response and root cause analysis on a simulated microservices
+  architecture. The agent receives production alerts, triages severity, investigates
+  logs/metrics/deployments, diagnoses root causes through hypothesis testing, and
+  selects appropriate remediation actions.
+
+author: "Team Vajra"
+license: "MIT"
+tags:
+  - openenv
+  - sre
+  - incident-response
+  - root-cause-analysis
+  - devops
+  - real-world
+  - observability
+
+environment:
+  entry_point: "environment.core:IncidentRCAEnv"
+  max_steps_per_episode: 25
+
+observation_space:
+  type: object
+  description: "Current incident state including alert, topology, evidence, hypotheses"
+  fields:
+    alert:
+      type: object
+    system_topology:
+      type: object
+    queried_evidence:
+      type: array
+    active_hypotheses:
+      type: array
+    incident_timeline:
+      type: array
+    current_phase:
+      type: string
+      enum: ["triage", "investigation", "diagnosis", "remediation", "resolved", "escalated"]
+    affected_services:
+      type: array
+    step_number:
+      type: integer
+    max_steps:
+      type: integer
+    severity_level:
+      type: string
+      enum: ["sev1", "sev2", "sev3", "sev4"]
+
+action_space:
+  type: object
+  fields:
+    action_type:
+      type: string
+      enum:
+        - assess_severity
+        - query_logs
+        - query_metrics
+        - check_deployments
+        - check_config_changes
+        - run_diagnostic
+        - form_hypothesis
+        - test_hypothesis
+        - identify_root_cause
+        - remediate_rollback
+        - remediate_scale
+        - remediate_restart
+        - remediate_config_fix
+        - remediate_hotfix
+        - escalate
+        - update_status_page
+    parameters:
+      type: object
+
+reward_space:
+  type: object
+  fields:
+    score:
+      type: number
+      minimum: -1.0
+      maximum: 1.0
+    breakdown:
+      type: object
+
+tasks:
+  - id: "easy_single_service_outage"
+    name: "Single Service Outage"
+    description: "Single service failure with clear error in logs."
+    difficulty: easy
+    max_steps: 15
+
+  - id: "medium_cascading_failure"
+    name: "Cascading Service Failure"
+    description: "Failure cascades across 2-4 services. Must trace to origin."
+    difficulty: medium
+    max_steps: 20
+
+  - id: "hard_subtle_degradation"
+    name: "Subtle Performance Degradation"
+    description: "Misleading symptoms, red herrings, requires correlating timestamps."
+    difficulty: hard
+    max_steps: 25
+
+deployment:
+  platform: huggingface_spaces
+  sdk: docker
+  port: 7860
