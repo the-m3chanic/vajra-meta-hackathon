@@ -56,8 +56,8 @@ class IncidentRCAEnv:
     def step(self, action: Action) -> StepResponse:
         if self.done:
             return StepResponse(observation=self._make_observation(),
-                           reward=Reward(score=0.001, message="Episode done."),
-                           done=True, info={"error": "Episode done. Call reset()."})
+                               reward=Reward(score=0.0, message="Episode done."),
+                               done=True, info={"error": "Episode done. Call reset()."})
         self.step_number += 1
         ak = self._action_key(action)
         is_rep = ak == self._last_action_key
@@ -116,8 +116,7 @@ class IncidentRCAEnv:
                 "done": self.done, "repeated_actions": self.repeated_action_count}
 
     def grade(self) -> float:
-        score = self.grader.grade_episode(self.get_episode_data())
-        return round(max(0.001, min(0.999, score)), 4)
+        return self.grader.grade_episode(self.get_episode_data())
 
     def _handlers(self):
         return {
@@ -237,9 +236,9 @@ class IncidentRCAEnv:
             gt = ctx["ground_truth"]
             match = h["root_cause_category"] == gt["root_cause_category"] and h["suspected_service"] == gt["root_cause_service"]
             if match:
-                h["status"] = "supported"; h["confidence"] = min(0.999, h["confidence"] + 0.2)
+                h["status"] = "supported"; h["confidence"] = min(1.0, h["confidence"] + 0.2)
                 return {"status": "ok", "result": "Evidence supports hypothesis", "hypothesis": h}
-            h["status"] = "weakened"; h["confidence"] = max(0.001, h["confidence"] - 0.2)
+            h["status"] = "weakened"; h["confidence"] = max(0.0, h["confidence"] - 0.2)
             return {"status": "ok", "result": "Evidence does not support", "hypothesis": h}
         ctx["invalid_action"] = True
         return {"error": f"Bad index: {p.hypothesis_index}"}

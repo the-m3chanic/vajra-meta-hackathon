@@ -79,8 +79,8 @@ reward_space:
   fields:
     score:
       type: number
-      minimum: -1.0
-      maximum: 1.0
+      minimum: -0.999
+      maximum: 0.999
     breakdown:
       type: object
 

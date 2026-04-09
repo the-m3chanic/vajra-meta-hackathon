@@ -340,7 +340,7 @@ class InfrastructureSimulator:
             if minutes_before > 0:
                 value = base_val + self.rng.gauss(0, base_val * 0.05)
             else:
-                progress = min(1.0, abs(minutes_before) / 10.0)
+                progress = min(0.999, abs(minutes_before) / 10.0)
                 value = base_val + (current_val - base_val) * progress
                 value += self.rng.gauss(0, abs(current_val - base_val) * 0.1)
             value = max(0, value)

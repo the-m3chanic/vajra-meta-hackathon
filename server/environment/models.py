@@ -322,7 +322,7 @@ class RewardBreakdown(BaseModel):
 
 
 class Reward(BaseModel):
-    score: float = Field(ge=-1.0, le=1.0)
+    score: float = Field(ge=-0.999, le=0.999, default=0.001)
     breakdown: RewardBreakdown = Field(default_factory=RewardBreakdown)
     message: str = ""
 
