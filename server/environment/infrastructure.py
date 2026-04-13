@@ -13,7 +13,7 @@ BASE_TOPOLOGY = {
         "service_type": "gateway",
         "dependencies": ["user-service", "order-service", "product-service"],
         "base_cpu": 25.0, "base_memory": 40.0, "base_latency": 50.0,
-        "base_error_rate": 0.001, "replicas": 4,
+        "base_error_rate": 0.02, "replicas": 4,
     },
     "user-service": {
         "service_type": "api",
@@ -31,7 +31,7 @@ BASE_TOPOLOGY = {
         "service_type": "api",
         "dependencies": ["product-db", "cache-redis", "search-service"],
         "base_cpu": 20.0, "base_memory": 35.0, "base_latency": 25.0,
-        "base_error_rate": 0.001, "replicas": 3,
+        "base_error_rate": 0.02, "replicas": 3,
     },
     "payment-service": {
         "service_type": "api",
@@ -49,7 +49,7 @@ BASE_TOPOLOGY = {
         "service_type": "api",
         "dependencies": ["user-db", "cache-redis"],
         "base_cpu": 12.0, "base_memory": 20.0, "base_latency": 20.0,
-        "base_error_rate": 0.001, "replicas": 2,
+        "base_error_rate": 0.02, "replicas": 2,
     },
     "search-service": {
         "service_type": "api",
@@ -97,13 +97,13 @@ BASE_TOPOLOGY = {
         "service_type": "database",
         "dependencies": [],
         "base_cpu": 45.0, "base_memory": 70.0, "base_latency": 15.0,
-        "base_error_rate": 0.001, "replicas": 1,
+        "base_error_rate": 0.02, "replicas": 1,
     },
     "payment-gateway-ext": {
         "service_type": "external",
         "dependencies": [],
         "base_cpu": 0.0, "base_memory": 0.0, "base_latency": 300.0,
-        "base_error_rate": 0.01, "replicas": 1,
+        "base_error_rate": 0.02, "replicas": 1,
     },
     "email-provider-ext": {
         "service_type": "external",
@@ -239,10 +239,10 @@ class InfrastructureSimulator:
             if root_cause_category in ("bad_deployment", "memory_leak"):
                 svc.current_cpu_percent = min(98, base.get("base_cpu", 30) * mult)
                 svc.current_memory_percent = min(97, base.get("base_memory", 50) * 1.8)
-                svc.current_error_rate = min(0.5, base.get("base_error_rate", 0.01) * mult * 20)
+                svc.current_error_rate = min(0.5, base.get("base_error_rate", 0.02) * mult * 20)
             elif root_cause_category == "config_change":
                 svc.current_latency_p99_ms = base.get("base_latency", 50) * mult * 3
-                svc.current_error_rate = min(0.3, base.get("base_error_rate", 0.01) * mult * 10)
+                svc.current_error_rate = min(0.3, base.get("base_error_rate", 0.02) * mult * 10)
             elif root_cause_category == "resource_exhaustion":
                 svc.current_cpu_percent = min(99, 92 + self.rng.gauss(0, 2))
                 svc.current_memory_percent = min(99, 95 + self.rng.gauss(0, 1))
@@ -250,7 +250,7 @@ class InfrastructureSimulator:
                 svc.current_latency_p99_ms = base.get("base_latency", 50) * mult * 5
                 svc.current_cpu_percent = min(95, base.get("base_cpu", 30) * 2.5)
             else:
-                svc.current_error_rate = min(0.4, base.get("base_error_rate", 0.01) * mult * 15)
+                svc.current_error_rate = min(0.4, base.get("base_error_rate", 0.02) * mult * 15)
                 svc.current_latency_p99_ms = base.get("base_latency", 50) * mult * 2
 
         for aff_name in affected_services:
@@ -260,7 +260,7 @@ class InfrastructureSimulator:
                 base_aff = BASE_TOPOLOGY.get(aff_name, {})
                 cf = mult * 0.6
                 aff.current_latency_p99_ms = base_aff.get("base_latency", 50) * cf * 2
-                aff.current_error_rate = min(0.2, base_aff.get("base_error_rate", 0.01) * cf * 8)
+                aff.current_error_rate = min(0.2, base_aff.get("base_error_rate", 0.02) * cf * 8)
                 aff.current_cpu_percent = min(85, base_aff.get("base_cpu", 30) * cf * 0.8)
 
     def generate_logs(self, service: str, root_cause_service: str, root_cause_category: str,
@@ -325,7 +325,7 @@ class InfrastructureSimulator:
             "cpu_percent": base.get("base_cpu", 30.0),
             "memory_percent": base.get("base_memory", 50.0),
             "latency_p99_ms": base.get("base_latency", 50.0),
-            "error_rate": base.get("base_error_rate", 0.01),
+            "error_rate": base.get("base_error_rate", 0.02),
             "request_rate": 500.0 + self.rng.gauss(0, 50),
         }
         base_val = base_values.get(metric_name, 50.0)
@@ -340,7 +340,7 @@ class InfrastructureSimulator:
             if minutes_before > 0:
                 value = base_val + self.rng.gauss(0, base_val * 0.05)
             else:
-                progress = min(0.999, abs(minutes_before) / 10.0)
+                progress = min(0.98, abs(minutes_before) / 10.0)
                 value = base_val + (current_val - base_val) * progress
                 value += self.rng.gauss(0, abs(current_val - base_val) * 0.1)
             value = max(0, value)

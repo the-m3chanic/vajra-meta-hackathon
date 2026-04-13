@@ -70,10 +70,10 @@ def safe_score(score):
     if score != score:
         return 0.5
     if score <= 0.0:
-        return 0.001
+        return 0.02
     if score >= 1.0:
-        return 0.999
-    return round(score, 4)
+        return 0.98
+    return '{:.2f}'.format(round(score, 2)) if score < 0.98 else 0.98
 
 @app.post("/step")
 async def step(req: StepRequest = StepRequest(action_type="query_logs", parameters={})):
@@ -84,15 +84,18 @@ async def step(req: StepRequest = StepRequest(action_type="query_logs", paramete
         action = parse_action(req.action_type, req.parameters)
         r = env.step(action)
         reward_dict = r.reward.model_dump()
+        raw_reward = reward_dict["score"]
         reward_dict["score"] = safe_score(reward_dict["score"])
+        print(f"STEP: action={req.action_type} raw_reward={raw_reward} safe_reward={reward_dict['score']} done={r.done}", flush=True)
         return {"observation": r.observation.model_dump(), "reward": reward_dict,
                 "done": r.done, "info": r.info}
     except HTTPException: raise
     except Exception as e:
         traceback.print_exc()
+        print(f"STEP ERROR: {e}", flush=True)
         return {
             "observation": {},
-            "reward": {"score": 0.5, "breakdown": {"triage_accuracy": 0.0, "investigation_quality": 0.0, "diagnosis_correctness": 0.0, "remediation_appropriateness": 0.0, "efficiency": 0.0, "penalty": 0.0}, "message": str(e)[:100]},
+            "reward": {"score": 0.5, "breakdown": {}, "message": str(e)[:100]},
             "done": True,
             "info": {"error": str(e)[:200]}
         }
@@ -112,11 +115,13 @@ async def tasks():
 async def grader():
     env = app.state.env
     if not env.episode_id:
+        print(f"GRADER: no episode, returning 0.5", flush=True)
         return {"task_id": "", "episode_id": "", "score": 0.5,
                 "done": False, "steps_taken": 0, "phase": "triage",
-                "cumulative_reward": 0.001, "details": {}}
-    score = env.grade()
-    score = round(max(0.001, min(0.999, score)), 4)
+                "cumulative_reward": 0.02, "details": {}}
+    raw = env.grade()
+    score = safe_score(raw)
+    print(f"GRADER: task={env.task_id} raw_score={raw} safe_score={score} steps={env.step_number} done={env.done}", flush=True)
     ed = env.get_episode_data()
     return {"task_id": env.task_id, "episode_id": env.episode_id, "score": score,
             "done": env.done, "steps_taken": env.step_number,
@@ -129,6 +134,7 @@ async def grader():
                         "remediation": ed.get("remediation_applied"),
                         "correct_remediation": ed.get("correct_remediation"),
                         "evidence_count": len(ed.get("evidence_collected", []))}}
+
 @app.get("/baseline")
 async def baseline():
     try:
@@ -185,27 +191,27 @@ def run_server_baseline() -> dict:
             topo = obs.system_topology
             asvc = alert.get("service", "")
             env.step(parse_action("assess_severity", {"assessed_severity": alert.get("severity_hint", "sev3"), "justification": "hint"}))
-            if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+            if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             env.step(parse_action("query_logs", {"service": asvc, "level_filter": "ERROR", "time_range_minutes": 30}))
-            if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+            if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             target = asvc
             for dep in topo.get(asvc, {}).get("dependencies", []):
                 if topo.get(dep, {}).get("status") in ("degraded", "down"):
                     target = dep; break
             if target != asvc:
                 env.step(parse_action("query_logs", {"service": target, "level_filter": "ERROR", "time_range_minutes": 30}))
-                if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+                if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             r = env.step(parse_action("check_deployments", {"service": None, "time_range_hours": 24}))
             deploys = r.info.get("deployments", [])
-            if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+            if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             r = env.step(parse_action("check_config_changes", {"service": None, "time_range_hours": 24}))
             configs = r.info.get("config_changes", [])
-            if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+            if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             cat, rem = "resource_exhaustion", "restart"
             if any(d.get("service") == target for d in deploys): cat, rem = "bad_deployment", "rollback"
             elif any(c.get("service") == target for c in configs): cat, rem = "config_change", "config_fix"
             env.step(parse_action("identify_root_cause", {"root_cause_category": cat, "root_cause_service": target, "root_cause_description": f"{cat} on {target}", "evidence_summary": [f"Alert on {asvc}"], "confidence": 0.6}))
-            if env.done: scores.append(round(max(0.001, min(0.999, env.grade())), 4)); continue
+            if env.done: scores.append(round(max(0.02, min(0.98, env.grade())), 4)); continue
             if rem == "rollback":
                 env.step(parse_action("remediate_rollback", {"service": target, "reason": "rollback"}))
             elif rem == "config_fix":
@@ -215,8 +221,8 @@ def run_server_baseline() -> dict:
                 env.step(parse_action("remediate_config_fix", {"service": target, "parameter": param, "new_value": old, "reason": "revert"}))
             else:
                 env.step(parse_action("remediate_restart", {"service": target, "reason": "restart"}))
-            scores.append(round(max(0.001, min(0.999, env.grade())), 4))
-        avg = round(max(0.001, min(0.999, sum(scores) / len(scores))), 4) if scores else 0.5
+            scores.append(round(max(0.02, min(0.98, env.grade())), 4))
+        avg = round(max(0.02, min(0.98, sum(scores) / len(scores))), 4) if scores else 0.5
         results[task_id] = {"average_score": avg, "episode_scores": scores, "num_episodes": len(scores), "difficulty": task.difficulty}
     return results
 

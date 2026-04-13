@@ -162,7 +162,7 @@ Each service has realistic:
 | Component | Weight | How It Works |
 |-----------|--------|-------------|
 | **Triage accuracy** | 15% | Correct severity gets full credit. Off-by-one partial credit. |
-| **Investigation quality** | 25% | **Information-value scoring**: investigating the root cause service = +0.08, affected service = +0.04, unrelated = +0.01. Bonus for checking relevant evidence type (deployments for deploy issues, configs for config issues). |
+| **Investigation quality** | 25% | **Information-value scoring**: investigating the root cause service = +0.08, affected service = +0.04, unrelated = +0.02. Bonus for checking relevant evidence type (deployments for deploy issues, configs for config issues). |
 | **Diagnosis correctness** | 30% | Both category + service correct = 1.0. Category only = 0.4. Service only = 0.3. Wrong = 0.0. |
 | **Remediation** | 20% | Correct action + correct target = 1.0. Right action/wrong target = 0.5. Right target/wrong action = 0.3. |
 | **Efficiency** | 10% | Fewer steps = higher bonus. |

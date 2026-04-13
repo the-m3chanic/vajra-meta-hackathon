@@ -20,7 +20,7 @@ class RewardCalculator:
     def calculate_step_reward(self, action: Action, phase_before: IncidentPhase,
                                phase_after: IncidentPhase, ctx: dict) -> Reward:
         bd = RewardBreakdown()
-        score = 0.001
+        score = 0.02
         msg = ""
         gt = ctx.get("ground_truth", {})
         root_svc = gt.get("root_cause_service", "")
@@ -32,14 +32,14 @@ class RewardCalculator:
             p = action.parameters.assess_severity
             if p:
                 if p.assessed_severity.value == correct_sev:
-                    bd.triage_accuracy = 0.999
+                    bd.triage_accuracy = 0.98
                     score += 0.12
                     msg = f"Correct severity: {p.assessed_severity.value}"
                 else:
                     order = ["sev4", "sev3", "sev2", "sev1"]
                     try:
                         diff = abs(order.index(p.assessed_severity.value) - order.index(correct_sev))
-                        partial = max(0, 0.999 - diff * 0.35)
+                        partial = max(0, 0.98 - diff * 0.35)
                         bd.triage_accuracy = partial
                         score += partial * 0.08
                         msg = f"Severity {p.assessed_severity.value} (expected {correct_sev})"
@@ -49,7 +49,7 @@ class RewardCalculator:
 
         elif action.action_type in self.INVESTIGATION_ACTIONS:
             qs = ctx.get("queried_service", "")
-            iv = 0.001
+            iv = 0.02
             if qs == root_svc:
                 iv = 0.08
                 msg = f"Investigated root service: {qs}"
@@ -57,7 +57,7 @@ class RewardCalculator:
                 iv = 0.04
                 msg = f"Investigated affected: {qs}"
             else:
-                iv = 0.01
+                iv = 0.02
                 msg = f"Investigated {qs} (not directly related)"
 
             if action.action_type == ActionType.CHECK_DEPLOYMENTS and root_cat == "bad_deployment":
@@ -74,7 +74,7 @@ class RewardCalculator:
             elif action.action_type == ActionType.RUN_DIAGNOSTIC:
                 iv += 0.02
 
-            bd.investigation_quality = min(0.999, iv / 0.12)
+            bd.investigation_quality = min(0.98, iv / 0.12)
             score += iv
 
         elif action.action_type == ActionType.FORM_HYPOTHESIS:
@@ -90,7 +90,7 @@ class RewardCalculator:
                     score += 0.04
                     msg = "Correct service, wrong category"
                 else:
-                    score += 0.01
+                    score += 0.02
                     msg = "Hypothesis formed"
 
         elif action.action_type == ActionType.TEST_HYPOTHESIS:
@@ -103,7 +103,7 @@ class RewardCalculator:
                 cat_ok = p.root_cause_category.value == root_cat
                 svc_ok = p.root_cause_service == root_svc
                 if cat_ok and svc_ok:
-                    bd.diagnosis_correctness = 0.999
+                    bd.diagnosis_correctness = 0.98
                     score += 0.25
                     msg = "ROOT CAUSE CORRECTLY IDENTIFIED!"
                 elif cat_ok:
@@ -115,7 +115,7 @@ class RewardCalculator:
                     score += 0.08
                     msg = f"Correct service, wrong category"
                 else:
-                    bd.diagnosis_correctness = 0.001
+                    bd.diagnosis_correctness = 0.02
                     score -= 0.05
                     msg = "Wrong root cause"
 
@@ -135,7 +135,7 @@ class RewardCalculator:
             targets_root = rem_svc == root_svc
 
             if agent_rem == correct_rem and targets_root:
-                bd.remediation_appropriateness = 0.999
+                bd.remediation_appropriateness = 0.98
                 score += 0.20
                 msg = f"CORRECT: {agent_rem} on {rem_svc}"
             elif agent_rem == correct_rem:
@@ -172,10 +172,10 @@ class RewardCalculator:
             bd.penalty -= 0.10
             msg += " [NO DIAGNOSIS PENALTY]"
 
-        score = max(-0.999, min(0.999, round(score, 4)))
+        score = max(-0.98, min(0.98, round(score, 4)))
         if score == 0.0:
-            score = 0.001
-        bd.penalty = max(-0.999, round(bd.penalty, 4))
+            score = 0.02
+        bd.penalty = max(-0.98, round(bd.penalty, 4))
         return Reward(score=score, breakdown=bd, message=msg)
 
     def calculate_episode_reward(self, data: dict) -> Reward:
@@ -184,14 +184,14 @@ class RewardCalculator:
         assessed = data.get("assessed_severity")
         if assessed:
             if assessed == correct_sev:
-                bd.triage_accuracy = 0.999
+                bd.triage_accuracy = 0.98
             else:
                 order = ["sev4", "sev3", "sev2", "sev1"]
                 try:
                     diff = abs(order.index(assessed) - order.index(correct_sev))
-                    bd.triage_accuracy = max(0, 0.999 - diff * 0.35)
+                    bd.triage_accuracy = max(0, 0.98 - diff * 0.35)
                 except ValueError:
-                    bd.triage_accuracy = 0.001
+                    bd.triage_accuracy = 0.02
 
         evidence = data.get("evidence_collected", [])
         root_svc = data.get("root_cause_service", "")
@@ -199,21 +199,21 @@ class RewardCalculator:
         found_root = any(e.get("service") == root_svc for e in evidence)
         inv_rel = sum(1 for e in evidence if e.get("service") in data.get("affected_services", []))
         if found_root:
-            bd.investigation_quality = min(0.999, 0.5 + inv_rel * 0.1)
+            bd.investigation_quality = min(0.98, 0.5 + inv_rel * 0.1)
         elif evidence:
             bd.investigation_quality = min(0.4, len(evidence) * 0.08)
         ev_types = {e.get("type") for e in evidence}
         if root_cat == "bad_deployment" and "deployment" in ev_types:
-            bd.investigation_quality = min(0.999, bd.investigation_quality + 0.2)
+            bd.investigation_quality = min(0.98, bd.investigation_quality + 0.2)
         elif root_cat == "config_change" and "config" in ev_types:
-            bd.investigation_quality = min(0.999, bd.investigation_quality + 0.2)
+            bd.investigation_quality = min(0.98, bd.investigation_quality + 0.2)
 
         rc = data.get("identified_root_cause")
         if rc:
             cat_ok = rc.get("root_cause_category") == root_cat
             svc_ok = rc.get("root_cause_service") == root_svc
             if cat_ok and svc_ok:
-                bd.diagnosis_correctness = 0.999
+                bd.diagnosis_correctness = 0.98
             elif cat_ok:
                 bd.diagnosis_correctness = 0.4
             elif svc_ok:
@@ -225,7 +225,7 @@ class RewardCalculator:
             type_ok = rem.get("type") == correct_rem
             svc_ok = rem.get("service") == root_svc
             if type_ok and svc_ok:
-                bd.remediation_appropriateness = 0.999
+                bd.remediation_appropriateness = 0.98
             elif type_ok:
                 bd.remediation_appropriateness = 0.5
             elif svc_ok:
@@ -236,15 +236,15 @@ class RewardCalculator:
         steps = data.get("steps_taken", 0)
         mx = data.get("max_steps", 25)
         if data.get("done") and steps > 0:
-            bd.efficiency = max(0, 0.999 - steps / mx)
+            bd.efficiency = max(0, 0.98 - steps / mx)
         bd.efficiency = max(0, bd.efficiency - data.get("repeated_actions", 0) * 0.05)
 
         total = (bd.triage_accuracy * self.TRIAGE_W + bd.investigation_quality * self.INVESTIGATION_W +
                  bd.diagnosis_correctness * self.DIAGNOSIS_W +
                  bd.remediation_appropriateness * self.REMEDIATION_W + bd.efficiency * self.EFFICIENCY_W)
-        total = max(-0.999, min(0.999, round(total, 4)))
+        total = max(-0.98, min(0.98, round(total, 4)))
         if total == 0.0:
-            total = 0.001
+            total = 0.02
         return Reward(score=total, breakdown=bd,
                       message=f"T:{bd.triage_accuracy:.2f} I:{bd.investigation_quality:.2f} "
                               f"D:{bd.diagnosis_correctness:.2f} R:{bd.remediation_appropriateness:.2f} "
